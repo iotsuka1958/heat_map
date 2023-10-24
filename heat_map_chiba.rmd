@@ -23,7 +23,7 @@ https://www.data.jma.go.jp/gmd/risk/obsdl/index.php
 からcsvファイルとしてスクレイプしておく。
 置き場所は ./data/。
 ```{r}
-temperature_chiba <- list.files(path = "data/", pattern = "*.csv", full.names = T) %>%
+temperature_chiba <- list.files(path = "data/", pattern = "*.csv", full.names = T) |>
   map_df(~ read_csv(.,
     skip = 6, locale = locale(encoding = "cp932"),
     col_names = c(
@@ -34,14 +34,14 @@ temperature_chiba <- list.files(path = "data/", pattern = "*.csv", full.names = 
     ),
     col_types = c("cdccdccdcc")
   )) %>%
-  mutate(date = as.Date(date)) %>%
+  mutate(date = as.Date(date)) |>
   mutate(source_id = format(date, "%Y") %>% substr(start = 1, stop = 3)) %>%
   # mutate_if(is.character, factor) %>%
-  mutate(across(where(is.character), factor)) %>%
-  mutate(location = "chiba") %>%
+  mutate(across(where(is.character), factor)) |> 
+  mutate(location = "chiba") |> 
   mutate(
     year = format(date, "%Y") %>% as.integer(),
-    month_day = paste("2018", format(date, "%m-%d"), sep = "-") %>% as.Date()
+    month_day = paste("2018", format(date, "%m-%d"), sep = "-") |>  as.Date()
   )
 temperature_chiba
 ```
@@ -98,7 +98,8 @@ plot_heat <- function(data) {
 
 
 ```{r echo=FALSE, out.width=1010}
-g <- plot_heat(temperature_chiba %>% filter(!is.na(max_temp)))
+g <- plot_heat(temperature_chiba |>
+  filter(!is.na(max_temp)))
 g
 ```
 
