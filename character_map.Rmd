@@ -14,6 +14,8 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(igraph)
 ```
+伊坂幸太郎の「アイネクライネナハトムジーク」の登場人物の相関図をRで書いてみる4．
+
 
 ## preparation
 
