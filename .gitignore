@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 .Rproj.user
 .Rhistory
 .RData
@@ -26,15 +25,3 @@
 *.nav
 *.snm
 *.vrb
-
-=======
-.Rhistory
-.RData
-.Rproj.user
-.Rdata
-.httr-oauth
-.DS_Store
-.quarto
-*.html
-*.pdf
->>>>>>> edc7748b1d78aba64c5e223e0df9acac91e8f438
