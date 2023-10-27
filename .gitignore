@@ -1,3 +1,33 @@
+<<<<<<< HEAD
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.jpg
+*.png
+*.pdf
+*.html
+*.xlsx
+*.tex.*
+*~
+\#*
+*.dvi
+*.aux
+*.log
+*.toc
+*.idx
+*.ind
+*.ilg
+*.out
+*.blg
+*.synctex.gz
+*.gitignore.*
+*.xbb
+*.nav
+*.snm
+*.vrb
+
+=======
 .Rhistory
 .RData
 .Rproj.user
@@ -7,3 +37,4 @@
 .quarto
 *.html
 *.pdf
+>>>>>>> edc7748b1d78aba64c5e223e0df9acac91e8f438
