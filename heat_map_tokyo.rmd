@@ -1,0 +1,115 @@
+---
+title: "heat_map_misc.Rmd"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+
+あらかじめ下記データをダウンロードしておき、読み込む。
+```{r}
+# download the provided .json data from the original Toyo Keizai Online link (https://toyokeizai.net/sp/visual/tko/temperature/)
+# then read it into R with the jsonlite package.
+tokyo_his_temp <- jsonlite::read_json("data/temperature.json", simplifyVector = TRUE)
+```
+
+
+```{r}
+# mold it into a dataframe...
+tokyo_weather_df <- tokyo_his_temp %>% 
+  set_names(nm = 1876:2018) %>% 
+  map(~as.data.frame(.) %>% 
+        modify_if(., is.factor, as.character) %>% 
+        modify_if(., is.character, as.numeric)) %>% 
+  map2_df(., names(.), ~ mutate(., year = .y)) %>% 
+  rename(avg_temp = ".") %>% 
+  mutate(year = as.numeric(year))
+```
+
+各年6/1から9/30まで、計122日のデータになっている。
+日付を加える。
+```{r}
+tokyo_weather_df <- tokyo_weather_df %>% 
+  filter(year != 2018) %>% 
+  group_by(year) %>% 
+  mutate(
+    date = seq.Date(from = as.Date("1876-06-01"), 
+                    by = "day",
+                    length = 122),
+    date = format(date, "%m/%d")
+  ) %>% 
+  ungroup()
+```
+
+
+色わけの準備。
+```{r}
+# colorbrewer2.org: diverging 8-class palette
+cols <- rev(c('#d53e4f','#f46d43','#fdae61','#fee08b','#e6f598','#abdda4','#66c2a5','#3288bd'))
+
+labels <- c("10", "12", "14", "16", "18", "20", "22", "24", "26", "28", "30", "32")
+
+breaks <- c(seq(10, 32, by = 2))
+```
+
+
+
+```{r}
+tokyo_weather_df %>% 
+  ggplot(aes(x = date, y = year, fill = avg_temp)) +
+  geom_tile() +
+  scale_fill_gradientn(
+    colours = cols,
+    labels = labels,
+    breaks = breaks,
+    limits = c(11.1, 33.2)) +
+  guides(fill = guide_colorbar(title = expression("Temperature " ( degree~C)),
+                               reverse = FALSE,
+                               title.position = "left",
+                               label.position = "bottom",
+                               nrow = 1)) +
+  scale_y_reverse(limits = c(2017, 1876), expand = c(0, 0),
+                  breaks = c(1876, seq(1880, 2015, by = 10), 2017)) +
+  scale_x_discrete(breaks = c("06/01", "07/01", "08/01", "09/01", "09/30"),
+                   labels = c("June 1st", "July 1st", "Aug. 1st", 
+                              "Sept. 1st", "Sept. 30th")) +
+  labs(title = "Summers in Tokyo are Getting Longer and Hotter (1876-2017)",
+       subtitle = glue::glue("
+          One Row = One Year, From June 1st to September 30th
+          Average Temperature (Celsius)
+          "),
+       caption = "Data from Toyo Keizai News via Japan Meteorological Agency") +
+  theme_minimal() +
+  theme(text = element_text(family = "Roboto Condensed", size = 12),
+        axis.title = element_blank(),
+        panel.grid = element_blank(),
+        legend.position = "bottom",
+        legend.key.width = unit(3, "cm"),
+        plot.margin=unit(c(1,1,1.5,1.2),"cm"))
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

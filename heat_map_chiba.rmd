@@ -1,0 +1,153 @@
+---
+title: "heat_map"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+require(tidyverse)
+require(ggthemes)
+```
+
+## R Markdown
+
+もとねたはここ。
+https://gist.github.com/Gedevan-Aleksizde/14e02581f1b4ca228d4f3d9337ee6049
+
+基礎データは
+https://www.data.jma.go.jp/gmd/risk/obsdl/index.php
+からcsvファイルとしてスクレイプしておく。
+置き場所は ./data/。
+```{r}
+temperature_chiba <- list.files(path = "data/", pattern = "*.csv", full.names = T) |>
+  map_df(~ read_csv(.,
+    skip = 6, locale = locale(encoding = "cp932"),
+    col_names = c(
+      "date",
+      "avg_temp", "avg_temp_quality", "avg_temp_loc",
+      "max_temp", "max_temp_quality", "max_temp_loc",
+      "min_temp", "min_temp_quality", "min_temp_loc"
+    ),
+    col_types = c("cdccdccdcc")
+  )) %>%
+  mutate(date = as.Date(date)) |>
+  mutate(source_id = format(date, "%Y") %>% substr(start = 1, stop = 3)) %>%
+  # mutate_if(is.character, factor) %>%
+  mutate(across(where(is.character), factor)) |> 
+  mutate(location = "chiba") |> 
+  mutate(
+    year = format(date, "%Y") %>% as.integer(),
+    month_day = paste("2018", format(date, "%m-%d"), sep = "-") |>  as.Date()
+  )
+temperature_chiba
+```
+
+以下の関数は最高気温について、7月1日から9月30日までプロットする。
+(期間は任意の期間にできる。下のコードのうちbetweenの行で指定する)
+平均気温ならmax_tempをavg_tempにする。
+凡例を適宜修正すること。
+
+```{r}
+plot_heat <- function(data) {
+  g <- ggplot(
+    data |>
+      filter(between(month_day, as.Date("2018-07-01"), as.Date("2018-09-30"))),
+    aes(
+      x = month_day,
+      y = year,
+      fill = max_temp,
+      color = "grey"
+    )
+  ) +
+    geom_tile(color = "grey", width = 1, height = 1) +
+    scale_fill_distiller(name = "最高気温", palette = "Spectral") +
+    #    labs(title = "Summers in Chiba are Getting Longer and Hotter (1966-2023)",
+    #         x="month_day", y="year",
+    #         caption="Data from Japan Meteorological Agency\n https://www.data.jma.go.jp/gmd/risk/obsdl/index.php") +
+    scale_y_reverse() +
+    scale_x_date(date_labels = "%m-%d") +
+    scale_color_discrete(guide = "none") +
+    coord_equal() +
+    theme_tufte() +
+    theme(axis.title.y = element_text(angle = 0, vjust = .5))
+  return(g)
+}
+```
+
+\newpage
+### 千葉市の夏はほんとうに暑くなっているのか
+
+
+ここのところ、毎日とても暑い。
+
+温暖化といわれているが、ほんとうに暑くなっているのか。
+千葉市の平均気温について、
+1966年以降、毎年6月1日から9月30日までをヒートマップにしてみる。
+(2023年は7月26日まで)
+
+
+基礎データは、
+気象庁のサイト(https://www.data.jma.go.jp/gmd/risk/obsdl/index.php)
+からスクレイプしたCSVファイル。
+
+(ざんねんながら、千葉市の場合、1966年3月31日以前については、平均気温、最高気温、最低気温のデータがない。ちなみに東京都は1876年から記録が残っている。)
+
+
+
+```{r echo=FALSE, out.width=1010}
+g <- plot_heat(temperature_chiba |>
+  filter(!is.na(max_temp)))
+g
+```
+
+```{r}
+ggsave("./heatmap.pdf", family = "Japan1")
+```
+
+
+これを見ても、いまひとつぴんとはこない。
+
+年によって差があるのはわかる。
+たとえば
+
+- 去年と比較すると、7月は今年のほうが暑い
+- 6月下旬についていえば去年のほうが暑かった
+- 近年で言うと2019年、2020年の7月は比較的過ごしやすかった
+
+とわかる。
+
+1900年代までは、青いところがちらほらあるし、
+最近になるにつれ全体的に赤が強くなってはいる感じだが、
+「まちがいなく年々暑くなっている!」と断言していいのかというといささか疑問だ。
+
+
+もっと長いスパンで見ればいろいろわかるかもしれないが、いかんせん千葉市については1966年3月31日以前のデータがない。
+
+
+
+
+\newpage
+```{r}
+ggplot(
+  temperature_chiba |>
+    filter(year > 1966) |>
+    filter(between(month_day, as.Date("2018-06-01"), as.Date("2018-09-30"))),
+  aes(
+    x = date,
+    y = avg_temp,
+    ymin = min_temp,
+    ymax = max_temp,
+    color = avg_temp
+  )
+) +
+  geom_line() +
+  scale_color_distiller(name = "", palette = "Spectral") +
+  labs(
+    x = "", y = "average_temp(Celsius)",
+    caption = "kisyocho\n https://www.data.jma.go.jp/gmd/risk/obsdl/index.php"
+  )
+```
